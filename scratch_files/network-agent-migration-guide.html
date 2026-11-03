@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network Agent Migration Draft</title>
+<style>
+:root {
+  --bg: #f6f7f8; --surface: #ffffff; --surface-2: #eef0f2; --border: #d5d9de;
+  --text: #1c2024; --text-soft: #5b636b; --accent: #0b6bcb;
+  --important: #c27c00; --caution: #c62828; --tip: #2e7d32; --notes: #6a4fbf;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111416; --surface: #1a1e21; --surface-2: #242a2e; --border: #343b41;
+    --text: #e6e9ec; --text-soft: #a3abb3; --accent: #5aa9f5;
+    --important: #e8a83a; --caution: #ef6b6b; --tip: #66bb6a; --notes: #a58cf0;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111416; --surface: #1a1e21; --surface-2: #242a2e; --border: #343b41;
+  --text: #e6e9ec; --text-soft: #a3abb3; --accent: #5aa9f5;
+  --important: #e8a83a; --caution: #ef6b6b; --tip: #66bb6a; --notes: #a58cf0;
+}
+* { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 880px; margin: 0 auto; padding: 32px 16px 64px; }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 4px; overflow-wrap: break-word; }
+pre { background: var(--surface-2); border: 1px solid var(--border); padding: 12px 14px; border-radius: 8px; overflow-x: auto; }
+pre code { background: none; padding: 0; font-size: 0.82rem; overflow-wrap: normal; }
+.notes { background: var(--surface); border: 1px solid var(--border); border-top: 4px solid var(--notes); border-radius: 10px; padding: 20px 22px; }
+.notes-title { margin: 0 0 8px; font-size: 1.15rem; color: var(--notes); }
+.notes-list { margin: 12px 0 0; display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 10px 18px; }
+.notes-list dt { font-weight: 650; }
+.notes-list dd { margin: 0; color: var(--text-soft); }
+.notes-list ol { margin: 0; padding-left: 1.2rem; }
+.notes-foot { margin: 14px 0 0; font-size: 0.85rem; color: var(--text-soft); }
+@media (max-width: 640px) { .notes-list { grid-template-columns: minmax(0, 1fr); gap: 2px; } .notes-list dd { margin-bottom: 10px; } }
+.divider { display: flex; align-items: center; gap: 12px; margin: 36px 0 8px; color: var(--text-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.divider::before, .divider::after { content: ""; flex: 1; border-top: 1px dashed var(--border); }
+.page h1 { font-size: 2rem; line-height: 1.25; margin: 16px 0 12px; }
+.page h2 { font-size: 1.4rem; margin: 40px 0 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+.page h3 { font-size: 1.12rem; margin: 28px 0 8px; }
+.page ol, .page ul { padding-left: 1.5rem; }
+.page li { margin: 6px 0; }
+.page table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 0.92rem; background: var(--surface); }
+.page th, .page td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+.page th { background: var(--surface-2); }
+.page td p { margin: 2px 0; }
+.table-scroll { overflow-x: auto; }
+.callout { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 14px; margin: 16px 0; }
+.callout p { margin: 4px 0; }
+.callout-important { border-left-color: var(--important); }
+.callout-caution { border-left-color: var(--caution); }
+.callout-tip { border-left-color: var(--tip); }
+.callout-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-soft); }
+.cgroup { border: 1px solid var(--border); border-radius: 8px; margin: 14px 0; background: var(--surface); }
+.collapser + .collapser { border-top: 1px solid var(--border); }
+.collapser summary { cursor: pointer; padding: 10px 14px; font-weight: 650; }
+.collapser-body { padding: 0 14px 8px; }
+.source { margin-top: 48px; }
+.source summary { cursor: pointer; font-weight: 650; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<section class="notes" aria-label="Notes for the docs writer">
+  <h2 class="notes-title">Notes for the docs writer</h2>
+  <p>This is draft content for a new docs.newrelic.com page, <strong>Migrate from kTranslate to the New Relic Network Agent</strong>. Customers reach it from the migration email or from their account team. The draft page starts below the line.</p>
+  <dl class="notes-list">
+    <dt>Suggested location</dt>
+    <dd><code>/docs/network-performance-monitoring/get-started/migrate-to-network-agent</code>, listed in the Network monitoring nav right after "Get started with network monitoring".</dd>
+
+    <dt>Names</dt>
+    <dd>Commands, paths, and names follow the agreed naming decisions (<code>ktranslate-catalog-names (4).json</code>): image <code>newrelic/network-agent:latest</code>, container names <code>network-agent-$CONTAINER_SERVICE</code>, paths under <code>/etc/network-agent</code>, <code>collector.name = 'network-agent'</code>, and the <code>NetworkAgent</code> log prefix. Podman, Linux package, and Quay.io options are gone from the updated docs; this page tells those customers to move to Docker.</dd>
+
+    <dt>Links</dt>
+    <dd>Links to the container management and health pages use their new addresses (<code>network-agent-container-management</code>, <code>network-agent-container-health</code>), so they work once those renames ship.</dd>
+
+    <dt>Placeholders</dt>
+    <dd><code>[DEADLINE DATE]</code> (six months after the announcement), <code>[ANNOUNCEMENT DATE]</code>, and <code>X.Y.Z</code> in the sample log line.</dd>
+
+    <dt>Tone</dt>
+    <dd>Don't mention the Kentik contract or how long the <code>kentik/ktranslate</code> images stay available. The deadline, and the fact that fixes and improvements ship only in the new agent, carry the urgency. Don't promise automatic updates: customers get new versions by re-creating containers.</dd>
+
+    <dt>Roadmap callout</dt>
+    <dd>The "What's coming" callout summarizes the Confluence page <a href="https://newrelic.atlassian.net/wiki/spaces/NNM/pages/6208651986/Network+Agent+Orchestration+Deployment" target="_blank" rel="noopener">Network Agent Orchestration &amp; Deployment</a>. It names no dates and leaves out automated agent upgrades (it would contradict the "no automatic updates" line above), high availability, and edge buffering, which are late or unconfirmed on the roadmap. Confirm the wording with product before publishing, because it describes unreleased features.</dd>
+
+    <dt>Checked against the agent</dt>
+    <dd>Every command was checked against <a href="https://github.com/newrelic-forks/newrelic-network-agent" target="_blank" rel="noopener">newrelic-forks/newrelic-network-agent</a>. All documented flags still exist. With the old <code>/etc/ktranslate</code> paths in <code>snmp-base.yaml</code>, every container type exits at startup and restarts in a loop. Inside the container, traps and syslog listen on ports 1620 and 5143. Device entities are unaffected, because the entity rules key on values that don't change. The device check in step 6 uses fields the agent puts on every device's data: <code>device_name</code>, <code>collector.name</code>, and <code>tags.container_service</code> (set from <code>-service_name</code>). Syslog messages carry <code>tags.container_service</code> only for devices listed in <code>snmp-base.yaml</code>, which is why the syslog variant filters on <code>plugin.type</code> instead.</dd>
+
+    <dt>Open before publishing</dt>
+    <dd>
+      <ol>
+        <li>The built-in <code>ktranslate-health</code> log parsing rule expects log lines that start with "ktranslate". The new agent's lines start with "network-agent", so they arrive unparsed, with no <code>severity</code> or <code>container_service</code>. The Logs team needs to update the rule.</li>
+        <li>The guided install in the New Relic UI still generates <code>kentik/ktranslate</code>, Podman, and Linux package commands.</li>
+        <li><code>newrelic/network-agent:latest</code> has to exist at release. Docker Hub only has release-candidate tags today.</li>
+      </ol>
+    </dd>
+  </dl>
+  <p class="notes-foot">Collapsible sections are shown expanded here; on the site they start collapsed. The draft MDX source is at the bottom of this file.</p>
+</section>
+
+<div class="divider">Draft page content</div>
+<article class="page">
+<h1>Migrate from kTranslate to the New Relic Network Agent</h1>
+<p>New Relic now builds, publishes, and supports the agent that collects your network data. The New Relic Network Agent replaces the kTranslate container image, and it&#x27;s the first step toward upcoming improvements to network monitoring. Future fixes and improvements ship only in the New Relic Network Agent. For each container, you update two paths in its configuration file, then re-create the container with the new image.</p><div class="callout callout-important"><div class="callout-label">important</div><p><strong>Action required.</strong> Migrate your deployments to the New Relic Network Agent by <strong>[DEADLINE DATE]</strong>. After that date, New Relic supports only deployments that use the <code>newrelic/network-agent</code> image.</p></div><div class="callout callout-tip"><div class="callout-label">tip</div><p><strong>What&#x27;s coming.</strong> New Relic is building tools to manage your network agents from the New Relic UI: discover devices and choose what to monitor, spread monitoring across containers automatically, and see the health of all your agents in one place. These capabilities will work only with the New Relic Network Agent, so by migrating now you can start using them as soon as they&#x27;re available.</p></div><h2 id="whats-changing">What&#x27;s changing</h2><p>The New Relic Network Agent runs the same way as kTranslate and reads the same configuration files. These are the differences that affect your deployment:</p><div class="table-scroll"><table><thead><tr><th style="width:220px"></th><th><p>kTranslate</p></th><th><p>New Relic Network Agent</p></th></tr></thead><tbody><tr><td><p>Container image</p></td><td><p><code>kentik/ktranslate:v2</code></p></td><td><p><code>newrelic/network-agent:latest</code>, published on <a target="_blank" rel="noopener" href="https://hub.docker.com/r/newrelic/network-agent/tags">Docker Hub</a></p></td></tr><tr><td><p>Paths in <code>snmp-base.yaml</code></p></td><td><p><code>/etc/ktranslate/profiles</code></p><p><code>/etc/ktranslate/mibs.db</code></p></td><td><p><code>/etc/network-agent/profiles</code></p><p><code>/etc/network-agent/mibs.db</code></p></td></tr><tr><td><p>Suggested container name</p></td><td><p><code>ktranslate-$CONTAINER_SERVICE</code></p></td><td><p><code>network-agent-$CONTAINER_SERVICE</code></p></td></tr><tr><td><p><code>collector.name</code> in agent logs and metrics</p></td><td><p><code>ktranslate</code></p></td><td><p><code>network-agent</code></p></td></tr><tr><td><p>Prefix in agent log messages</p></td><td><p><code>KTranslate</code></p></td><td><p><code>NetworkAgent</code></p></td></tr><tr><td><p>Supported installation methods</p></td><td><p>Docker, Podman, Linux package</p></td><td><p>Docker</p></td></tr></tbody></table></div><p><strong>What stays the same:</strong> your devices keep their entities and history, and metric names don&#x27;t change. Your license key, account ID, region, and <code>docker run</code> flags carry over as they are, and so do environment variables such as <code>KENTIK_MERAKI_API_KEY</code>. Only queries that filter on <code>collector.name</code> or on agent log text need updates. For details, see <a href="#update-queries">Update queries, alerts, and dashboards</a>.</p><h2 id="before-you-begin">Before you begin</h2><ol><li><p>On each Docker host, list your kTranslate containers:</p><pre><code class="language-shell">docker ps -a --format &quot;{{.ID}}  {{.Names}}  {{.Image}}&quot; | grep ktranslate
+</code></pre><p>Output example:</p><pre><code>3297b134a352  ktranslate-snmp   kentik/ktranslate:v2
+4962a854b386  ktranslate-sflow  kentik/ktranslate:v2
+</code></pre></li><li><p>Note the settings each container was started with. If you no longer have the original <code>docker run</code> command, <code>docker inspect</code> shows them:</p><pre><code class="language-shell"># Flags passed after the image name
+docker inspect --format &#x27;{{json .Config.Cmd}}&#x27; $CONTAINER_NAME
+# Environment variables (this includes your license key, so don&#x27;t share the output)
+docker inspect --format &#x27;{{json .Config.Env}}&#x27; $CONTAINER_NAME
+# Files mounted into the container, such as snmp-base.yaml
+docker inspect --format &#x27;{{json .HostConfig.Binds}}&#x27; $CONTAINER_NAME
+# Published ports, network mode, and restart policy
+docker inspect --format &#x27;{{json .HostConfig.PortBindings}} {{.HostConfig.NetworkMode}} {{.HostConfig.RestartPolicy.Name}}&#x27; $CONTAINER_NAME
+</code></pre></li><li><p>Back up each <code>snmp-base.yaml</code> file before you edit it.</p></li><li><p>If your hosts pull images through an internal registry, copy the new image into it, then use your registry&#x27;s image name in the commands on this page:</p><pre><code class="language-shell">docker pull newrelic/network-agent:latest
+docker tag newrelic/network-agent:latest $YOUR_REGISTRY/newrelic/network-agent:latest
+docker push $YOUR_REGISTRY/newrelic/network-agent:latest
+</code></pre></li></ol><div class="callout callout-tip"><div class="callout-label">tip</div><p>Migrate one container first and check that it reports all its devices before you migrate the rest. Each container stops sending data for a minute or two while you switch it over.</p></div><h2 id="migrate-docker">Migrate a Docker deployment</h2><p>Repeat these steps for each container:</p><ol><li><p>In the container&#x27;s <code>snmp-base.yaml</code> file, update the two paths under <code>global</code>:</p><pre><code class="language-yaml">global:
+  mib_profile_dir: /etc/network-agent/profiles
+  mibs_db: /etc/network-agent/mibs.db
+</code></pre><p>If your file doesn&#x27;t have a <code>mibs_db</code> line, update <code>mib_profile_dir</code> only.</p><div class="callout callout-important"><div class="callout-label">important</div><p>Don&#x27;t skip this step, even for flow and syslog containers. With the old <code>/etc/ktranslate</code> paths, the New Relic Network Agent can&#x27;t load its SNMP profiles, so the container stops right after it starts and keeps restarting.</p></div></li><li><p>Pull the new image:</p><pre><code class="language-shell">docker pull newrelic/network-agent:latest
+</code></pre></li><li><p>Stop the old container:</p><pre><code class="language-shell">docker stop ktranslate-$CONTAINER_SERVICE
+</code></pre><p>If the old container&#x27;s restart policy is <code>always</code>, also turn it off so the container doesn&#x27;t start again when Docker or the host restarts:</p><pre><code class="language-shell">docker update --restart=no ktranslate-$CONTAINER_SERVICE
+</code></pre></li><li><p>Start the new container with your original <code>docker run</code> command, changing only the container name and the image. Keep the same <code>-service_name</code> value: it sets the <code>tags.container_service</code> attribute on your data, so anything filtered on it keeps working. For example, for SNMP polling:</p><pre><code class="language-shell">docker run -d --name network-agent-$CONTAINER_SERVICE \
+  --restart unless-stopped --pull=always -p 162:1620/udp \
+  -v `pwd`/snmp-base.yaml:/snmp-base.yaml \
+  -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+  newrelic/network-agent:latest \
+  -snmp /snmp-base.yaml \
+  -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+  -metrics=jchf \
+  -tee_logs=true \
+  -service_name=$CONTAINER_SERVICE \
+  -snmp_discovery_on_start=true \
+  -snmp_discovery_min=180 \
+  nr1.snmp
+</code></pre><p>For commands for each type of container, see <a href="#example-commands">Example commands</a>.</p></li><li><p>Check that the new container started:</p><pre><code class="language-shell">docker logs network-agent-$CONTAINER_SERVICE 2&gt;&amp;1 | grep &quot;Running --&quot;
+</code></pre><p>You should see a line like <code>NetworkAgent Running -- version X.Y.Z</code>. Within a few minutes, the container also appears as <code>network-agent</code> in the <a href="#track-migration">migration tracking query</a>.</p></li><li><p>Check that the new container reports every device the old one did. Wait at least two polling intervals after it starts (<code>global.poll_time_sec</code> in <code>snmp-base.yaml</code>), then run this query in New Relic. Replace <code>YOUR_CONTAINER_SERVICE</code> with the container&#x27;s <code>-service_name</code> value, and make sure the time window starts before you stopped the old container:</p><pre><code class="language-sql">FROM Metric
+SELECT filter(count(*), WHERE collector.name = &#x27;ktranslate&#x27;) AS &#x27;kTranslate&#x27;,
+  filter(count(*), WHERE collector.name = &#x27;network-agent&#x27;) AS &#x27;New Relic Network Agent&#x27;
+WHERE instrumentation.provider = &#x27;kentik&#x27;
+AND tags.container_service = &#x27;YOUR_CONTAINER_SERVICE&#x27;
+FACET device_name
+SINCE 3 hours ago
+LIMIT MAX
+</code></pre><p>Each row is one device, with the number of data points each agent sent for it. Every device that has data under <strong>kTranslate</strong> should also have data under <strong>New Relic Network Agent</strong>. A <code>0</code> under <strong>New Relic Network Agent</strong> means the new container isn&#x27;t reporting that device yet. If your container doesn&#x27;t use <code>-service_name</code>, leave out the <code>tags.container_service</code> line; the query then covers all your containers.</p><p>For other types of containers, change the query:</p><ul><li><strong>Network flow:</strong> use <code>FROM KFlow</code> instead of <code>FROM Metric</code>.</li><li><strong>Syslog:</strong> use <code>FROM Log</code>, and replace the <code>tags.container_service</code> line with <code>AND plugin.type = &#x27;ktranslate-syslog&#x27;</code>. This version covers all your syslog containers together.</li></ul><p>If a device is missing, look for errors that mention it in the container logs. For SNMP, also check that the device is still listed under <code>devices</code> in <code>snmp-base.yaml</code>.</p><pre><code class="language-shell">docker logs network-agent-$CONTAINER_SERVICE 2&gt;&amp;1 | grep &quot;$DEVICE_NAME&quot;
+</code></pre></li><li><p>When the new container reports all its devices, remove the old one:</p><pre><code class="language-shell">docker rm ktranslate-$CONTAINER_SERVICE
+</code></pre></li></ol><div class="callout callout-tip"><div class="callout-label">tip</div><p>Until you remove the old container, you can roll back: stop the new container, restore your backed-up <code>snmp-base.yaml</code>, and run <code>docker start ktranslate-$CONTAINER_SERVICE</code>. If you turned off the old container&#x27;s restart policy, turn it back on with <code>docker update --restart=unless-stopped ktranslate-$CONTAINER_SERVICE</code>.</p></div><h3 id="example-commands">Example commands</h3><p>These are the default commands from the setup guides, updated for the New Relic Network Agent. If you customized your original command, keep your own flags and change only the container name and the image. Keep any <code>-nr_region</code> flag you set, such as <code>-nr_region=GOV</code> for FedRAMP.</p><div class="cgroup"><details id="snmp-polling-command" class="collapser" open=""><summary>SNMP polling</summary><div class="collapser-body"><pre><code class="language-shell">docker run -d --name network-agent-$CONTAINER_SERVICE \
+  --restart unless-stopped --pull=always -p 162:1620/udp \
+  -v `pwd`/snmp-base.yaml:/snmp-base.yaml \
+  -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+  newrelic/network-agent:latest \
+  -snmp /snmp-base.yaml \
+  -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+  -metrics=jchf \
+  -tee_logs=true \
+  -service_name=$CONTAINER_SERVICE \
+  -snmp_discovery_on_start=true \
+  -snmp_discovery_min=180 \
+  nr1.snmp
+```
+
+</code></pre></div></details><details id="snmp-traps-command" class="collapser" open=""><summary>SNMP traps (dedicated container)</summary><div class="collapser-body"><pre><code class="language-shell">docker run -d --name network-agent-$CONTAINER_SERVICE \
+  --restart unless-stopped --pull=always -p 162:1620/udp \
+  -v `pwd`/traps-base.yaml:/snmp-base.yaml \
+  -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+  newrelic/network-agent:latest \
+  -snmp /snmp-base.yaml \
+  -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+  -metrics=jchf \
+  -tee_logs=true \
+  -service_name=$CONTAINER_SERVICE \
+  nr1.snmp
+```
+
+</code></pre></div></details><details id="network-flow-command" class="collapser" open=""><summary>Network flow</summary><div class="collapser-body"><pre><code class="language-shell">docker run -d --name network-agent-$CONTAINER_SERVICE \
+  --restart unless-stopped --pull=always --net=host \
+  -v `pwd`/snmp-base.yaml:/snmp-base.yaml \
+  -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+  newrelic/network-agent:latest \
+  -snmp /snmp-base.yaml \
+  -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+  -metrics=jchf \
+  -tee_logs=true \
+  -service_name=$CONTAINER_SERVICE \
+  -flow_only=true \
+  nr1.flow
+```
+
+</code></pre></div></details><details id="syslog-command" class="collapser" open=""><summary>Syslog</summary><div class="collapser-body"><pre><code class="language-shell">docker run -d --name network-agent-$CONTAINER_SERVICE \
+  --restart unless-stopped --pull=always -p 514:5143/udp \
+  -v `pwd`/snmp-base.yaml:/snmp-base.yaml \
+  -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+  newrelic/network-agent:latest \
+  -snmp /snmp-base.yaml \
+  -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+  -metrics=jchf \
+  -tee_logs=true \
+  -dns=local \
+  -service_name=$CONTAINER_SERVICE \
+  nr1.syslog
+```
+
+</code></pre></div></details><details id="meraki-command" class="collapser" open=""><summary>Meraki Dashboard API</summary><div class="collapser-body"><pre><code class="language-shell">docker run -d --name network-agent-$CONTAINER_SERVICE \
+  --restart unless-stopped --pull=always --net=host \
+  -v `pwd`/meraki-base.yaml:/snmp-base.yaml \
+  -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+  newrelic/network-agent:latest \
+  -snmp /snmp-base.yaml \
+  -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+  -metrics=jchf \
+  -tee_logs=true \
+  -service_name=$CONTAINER_SERVICE \
+  nr1.snmp
+```
+
+</code></pre></div></details></div><h3 id="custom-profiles">If you mount custom SNMP profiles</h3><p>If you mount your own SNMP profiles into the container, change the mount target to the new profile folder. It must match the <code>mib_profile_dir</code> value you set in step 1:</p><pre><code class="language-shell">-v `pwd`/snmp-profiles/profiles:/etc/network-agent/profiles
+</code></pre><h3 id="deployment-pipelines">If you deploy with Docker Compose, Kubernetes, or scripts</h3><p>Make the same changes in your deployment files, then redeploy so that each container is re-created:</p><ul><li>Change the image from <code>kentik/ktranslate:v2</code>, or any version tag you pinned, to <code>newrelic/network-agent:latest</code>.</li><li>Update the two paths in the <code>snmp-base.yaml</code> file you deploy, as described in step 1.</li><li>Change any mount target under <code>/etc/ktranslate</code>, such as custom profiles, to the same path under <code>/etc/network-agent</code>.</li><li>Keep your flags and environment variables as they are.</li></ul><p>For example, in a Docker Compose file:</p><pre><code class="language-yaml">services:
+  network-agent-snmp:
+    image: newrelic/network-agent:latest  # was kentik/ktranslate:v2
+    volumes:
+      - ./snmp-base.yaml:/snmp-base.yaml
+    # Keep your existing command, ports, and environment settings.
+</code></pre><h3 id="newer-versions">Get newer versions</h3><p>The New Relic Network Agent doesn&#x27;t update itself. With the <code>latest</code> tag, a container picks up a newer version when you re-create it, because <code>--pull=always</code> pulls the newest image when the container is created. Restarting an existing container keeps the version it already has.</p><p>To move a container to the newest version, remove it and run your <code>docker run</code> command again:</p><pre><code class="language-shell">docker rm -f network-agent-$CONTAINER_SERVICE
+</code></pre><p>To run a specific version instead, replace <code>latest</code> with a version tag from <a target="_blank" rel="noopener" href="https://hub.docker.com/r/newrelic/network-agent/tags">Docker Hub</a>, for example <code>newrelic/network-agent:$VERSION</code>. The kTranslate version tags, such as <code>kt-2023-02-28-4294815650</code>, don&#x27;t apply to the new image.</p><h2 id="move-to-docker">Move from Podman or a Linux package to Docker</h2><div class="callout callout-caution"><div class="callout-label">caution</div><p>Podman and Linux package installations aren&#x27;t supported with the New Relic Network Agent. Move these deployments to Docker.</p></div><p>You can keep your existing <code>snmp-base.yaml</code> files and settings. <a target="_blank" rel="noopener" href="https://docs.docker.com/engine/install/">Install Docker</a> on the host, then follow the steps for your current setup:</p><div class="cgroup"><details id="from-podman" class="collapser" open=""><summary>From Podman</summary><div class="collapser-body"><ol><li><p>List your kTranslate containers:</p><pre><code class="language-shell">podman ps -a --format &quot;{{.ID}}  {{.Names}}  {{.Image}}&quot; | grep ktranslate
+</code></pre></li><li><p>Note each container&#x27;s flags, environment variables, mounted files, and ports. <code>podman inspect</code> accepts the same <code>--format</code> options shown in <a href="#before-you-begin">Before you begin</a>.</p></li><li><p>In each <code>snmp-base.yaml</code> file, update the two paths under <code>global</code>, as described in <a href="#migrate-docker">step 1 of the Docker migration</a>.</p></li><li><p>Stop the Podman container. If a systemd unit starts it automatically, disable that unit too.</p><pre><code class="language-shell">podman stop $CONTAINER_NAME
+</code></pre></li><li><p>Start the container with Docker, using the matching command from <a href="#example-commands">Example commands</a> and the same flags and files you noted in step 2.</p></li><li><p>When the new container reports all its devices (see <a href="#migrate-docker">step 6 of the Docker migration</a>), remove the Podman container:</p><pre><code class="language-shell">podman rm $CONTAINER_NAME
+</code></pre></li></ol></div></details><details id="from-linux-package" class="collapser" open=""><summary>From a Linux package</summary><div class="collapser-body"><p>Your current settings are in two files:</p><ul><li><code>/etc/ktranslate/snmp-base.yaml</code>: your devices and discovery settings</li><li><code>/etc/default/ktranslate.env</code>: your account ID, license key, and the agent flags in <code>KT_FLAGS</code></li></ul><ol><li><p>Copy your configuration file to a working folder and give ownership to user ID 1000, which the container runs as:</p><pre><code class="language-shell">mkdir -p ~/network-agent &amp;&amp; cd ~/network-agent
+sudo cp /etc/ktranslate/snmp-base.yaml .
+sudo chown 1000:1000 snmp-base.yaml
+</code></pre><p>If you customized profiles in <code>/etc/ktranslate/profiles</code>, copy that folder too and mount it as described in <a href="#custom-profiles">If you mount custom SNMP profiles</a>.</p></li><li><p>Edit the copy:</p><ul><li>Update the two paths under <code>global</code>, as described in <a href="#migrate-docker">step 1 of the Docker migration</a>.</li><li>If the agent receives SNMP traps, change <code>trap.listen</code> from <code>0.0.0.0:162</code> to <code>0.0.0.0:1620</code>. Docker publishes host port 162 to this port.</li></ul></li><li><p>Build your <code>docker run</code> command from the matching command in <a href="#example-commands">Example commands</a>:</p><ul><li>Use the <code>NR_ACCOUNT_ID</code> and <code>NEW_RELIC_API_KEY</code> values from <code>/etc/default/ktranslate.env</code>.</li><li>Add any other flags from <code>KT_FLAGS</code> that the command doesn&#x27;t already include.</li><li>For syslog, leave out <code>-syslog.source=0.0.0.0:514</code>. The container listens on port 5143, and <code>-p 514:5143/udp</code> publishes it on host port 514.</li></ul></li><li><p>Stop and disable the kTranslate service so that it releases its ports:</p><pre><code class="language-shell">sudo systemctl disable --now ktranslate
+</code></pre></li><li><p>From the folder that holds your <code>snmp-base.yaml</code>, run your <code>docker run</code> command.</p></li><li><p>When the new container reports all its devices (see <a href="#migrate-docker">step 6 of the Docker migration</a>), uninstall the package:</p><pre><code class="language-shell"># Yum
+sudo yum remove ktranslate
+# Apt
+sudo apt-get remove ktranslate
+</code></pre><p>Until you uninstall the package, you can roll back: stop the container and run <code>sudo systemctl enable --now ktranslate</code>.</p></li></ol></div></details></div><h2 id="update-queries">Update queries, alerts, and dashboards</h2><p>Device metrics and entities don&#x27;t change, so dashboards and alerts built on them keep working. Update anything that identifies the agent itself, such as the queries in <a target="_blank" rel="noopener" href="https://docs.newrelic.com/docs/network-performance-monitoring/advanced/network-agent-container-health">Docker container health monitoring</a>:</p><ul><li><strong><code>collector.name</code>:</strong> change <code>&#x27;ktranslate&#x27;</code> to <code>&#x27;network-agent&#x27;</code>. In the logs search bar, use <code>collector.name:&quot;network-agent&quot;</code>.</li><li><strong>Agent log text:</strong> the prefix changes from <code>KTranslate</code> to <code>NetworkAgent</code>. For example, the startup line <code>KTranslate Running -- Version kt-…</code> becomes <code>NetworkAgent Running -- version X.Y.Z</code>.</li></ul><p>While you migrate, some of your containers still run kTranslate. To cover both agents, match either value:</p><pre><code class="language-sql">FROM Log SELECT *
+WHERE collector.name IN (&#x27;ktranslate&#x27;, &#x27;network-agent&#x27;)
+AND message LIKE &#x27;%Running -- version%&#x27;
+</code></pre><p>This query finds the startup line from both agents, because <code>LIKE</code> isn&#x27;t case-sensitive. Check your NRQL alert conditions and dashboard widgets for the same values.</p><h2 id="track-migration">Track your migration</h2><p>To see which of your containers already run the New Relic Network Agent, run this query. Rows that show <code>ktranslate</code> in the <strong>Agent</strong> column still need to be migrated.</p><pre><code class="language-sql">FROM Metric
+SELECT latest(ver) AS &#x27;Version&#x27;
+FACET collector.name AS &#x27;Agent&#x27;, host AS &#x27;Host&#x27;, svc AS &#x27;Container service&#x27;
+WHERE provider = &#x27;kentik-agent&#x27;
+AND instrumentation.name = &#x27;heartbeat&#x27;
+SINCE 1 hour ago
+</code></pre><p>A container you&#x27;ve migrated shows up with <code>network-agent</code> a few minutes after it starts. Its old <code>ktranslate</code> row drops off when the query&#x27;s time window no longer includes data from the old container.</p><h2 id="troubleshooting">Troubleshooting</h2><div class="cgroup"><details id="container-keeps-restarting" class="collapser" open=""><summary>The new container keeps restarting</summary><div class="collapser-body"><p>The container logs show an error like <code>There was an error when setting up the /etc/ktranslate/mibs.db mibDB database and the /etc/ktranslate/profiles profiles</code>. Your <code>snmp-base.yaml</code> still has the old paths.</p><p>Update the paths as described in <a href="#migrate-docker">step 1 of the Docker migration</a>, then re-create the container: run <code>docker rm -f network-agent-$CONTAINER_SERVICE</code>, then your <code>docker run</code> command.</p></div></details><details id="container-name-in-use" class="collapser" open=""><summary>docker run fails because the container name is already in use</summary><div class="collapser-body"><p>Another container already has that name, for example from an earlier attempt. Remove it with <code>docker rm -f $CONTAINER_NAME</code>, or choose a different name.</p></div></details><details id="port-in-use" class="collapser" open=""><summary>docker run fails because a port is already allocated or in use</summary><div class="collapser-body"><p>Something still holds port 162 (traps) or 514 (syslog), usually the old kTranslate container or service. Stop it first:</p><ul><li>Docker: <code>docker stop ktranslate-$CONTAINER_SERVICE</code></li><li>Podman: <code>podman stop $CONTAINER_NAME</code></li><li>Linux package: <code>sudo systemctl disable --now ktranslate</code></li></ul></div></details><details id="traps-missing-after-linux" class="collapser" open=""><summary>SNMP traps stop arriving after moving from a Linux package</summary><div class="collapser-body"><p>Inside the container, the agent listens for traps on port 1620. In your <code>snmp-base.yaml</code>, set <code>trap.listen</code> to <code>0.0.0.0:1620</code>, and publish the port with <code>-p 162:1620/udp</code>.</p></div></details><details id="discovery-permission-error" class="collapser" open=""><summary>Discovery fails with a permissions error</summary><div class="collapser-body"><p>The container runs as user ID 1000 and needs to write to <code>snmp-base.yaml</code>. Run <code>sudo chown 1000:1000 snmp-base.yaml</code>. For more details, see <a target="_blank" rel="noopener" href="https://docs.newrelic.com/docs/network-performance-monitoring/troubleshooting/chtimes-error">The container is running but discovery job doesn&#x27;t begin</a>.</p></div></details><details id="health-queries-empty" class="collapser" open=""><summary>Health queries or alerts show no data after migrating</summary><div class="collapser-body"><p>They still filter on <code>collector.name = &#x27;ktranslate&#x27;</code> or on <code>KTranslate</code> log text. Update them as described in <a href="#update-queries">Update queries, alerts, and dashboards</a>.</p></div></details><details id="old-version-after-update" class="collapser" open=""><summary>A container still runs an older version</summary><div class="collapser-body"><p>Restarting a container doesn&#x27;t pull a newer image. Re-create the container as described in <a href="#newer-versions">Get newer versions</a>.</p></div></details></div><h2 id="timeline">Timeline</h2><ul><li><strong>[ANNOUNCEMENT DATE]:</strong> The New Relic Network Agent is available on Docker Hub.</li><li><strong>[DEADLINE DATE]:</strong> Migration deadline. After this date, New Relic supports only deployments that use the <code>newrelic/network-agent</code> image.</li></ul><h2 id="related-docs">Related docs</h2><ul><li><a target="_blank" rel="noopener" href="https://docs.newrelic.com/docs/network-performance-monitoring/setup-performance-monitoring/snmp-performance-monitoring">Set up SNMP data monitoring</a></li><li><a target="_blank" rel="noopener" href="https://docs.newrelic.com/docs/network-performance-monitoring/setup-performance-monitoring/network-flow-monitoring">Set up network flow data monitoring</a></li><li><a target="_blank" rel="noopener" href="https://docs.newrelic.com/docs/network-performance-monitoring/setup-performance-monitoring/network-syslog-monitoring">Set up network syslog monitoring</a></li><li><a target="_blank" rel="noopener" href="https://docs.newrelic.com/docs/network-performance-monitoring/setup-performance-monitoring/meraki-api-polling">Set up Meraki Dashboard API monitoring</a></li><li><a target="_blank" rel="noopener" href="https://docs.newrelic.com/docs/network-performance-monitoring/advanced/advanced-config">Advanced configuration for network monitoring</a></li><li><a target="_blank" rel="noopener" href="https://docs.newrelic.com/docs/network-performance-monitoring/advanced/network-agent-container-management">Manage the agent&#x27;s Docker container</a></li><li><a target="_blank" rel="noopener" href="https://docs.newrelic.com/docs/network-performance-monitoring/advanced/network-agent-container-health">Monitor the agent container&#x27;s health</a></li></ul>
+</article>
+<details class="source">
+<summary>Draft MDX source (for copying into the docs repo)</summary>
+<pre><code>---
+title: Migrate from kTranslate to the New Relic Network Agent
+tags:
+  - Integrations
+  - Network monitoring
+  - Migration
+metaDescription: Move your network monitoring deployments from the kTranslate container image to the New Relic Network Agent.
+freshnessValidatedDate: never
+---
+
+New Relic now builds, publishes, and supports the agent that collects your network data. The New Relic Network Agent replaces the kTranslate container image, and it's the first step toward upcoming improvements to network monitoring. Future fixes and improvements ship only in the New Relic Network Agent. For each container, you update two paths in its configuration file, then re-create the container with the new image.
+
+&lt;Callout variant="important"&gt;
+  **Action required.** Migrate your deployments to the New Relic Network Agent by **[DEADLINE DATE]**. After that date, New Relic supports only deployments that use the `newrelic/network-agent` image.
+&lt;/Callout&gt;
+
+&lt;Callout variant="tip"&gt;
+  **What's coming.** New Relic is building tools to manage your network agents from the New Relic UI: discover devices and choose what to monitor, spread monitoring across containers automatically, and see the health of all your agents in one place. These capabilities will work only with the New Relic Network Agent, so by migrating now you can start using them as soon as they're available.
+&lt;/Callout&gt;
+
+## What's changing [#whats-changing]
+
+The New Relic Network Agent runs the same way as kTranslate and reads the same configuration files. These are the differences that affect your deployment:
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th style={{ width: "220px" }}&gt;
+      &lt;/th&gt;
+
+      &lt;th&gt;
+        kTranslate
+      &lt;/th&gt;
+
+      &lt;th&gt;
+        New Relic Network Agent
+      &lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;
+        Container image
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        `kentik/ktranslate:v2`
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        `newrelic/network-agent:latest`, published on [Docker Hub](https://hub.docker.com/r/newrelic/network-agent/tags)
+      &lt;/td&gt;
+    &lt;/tr&gt;
+
+    &lt;tr&gt;
+      &lt;td&gt;
+        Paths in `snmp-base.yaml`
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        `/etc/ktranslate/profiles`
+
+        `/etc/ktranslate/mibs.db`
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        `/etc/network-agent/profiles`
+
+        `/etc/network-agent/mibs.db`
+      &lt;/td&gt;
+    &lt;/tr&gt;
+
+    &lt;tr&gt;
+      &lt;td&gt;
+        Suggested container name
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        `ktranslate-$CONTAINER_SERVICE`
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        `network-agent-$CONTAINER_SERVICE`
+      &lt;/td&gt;
+    &lt;/tr&gt;
+
+    &lt;tr&gt;
+      &lt;td&gt;
+        `collector.name` in agent logs and metrics
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        `ktranslate`
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        `network-agent`
+      &lt;/td&gt;
+    &lt;/tr&gt;
+
+    &lt;tr&gt;
+      &lt;td&gt;
+        Prefix in agent log messages
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        `KTranslate`
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        `NetworkAgent`
+      &lt;/td&gt;
+    &lt;/tr&gt;
+
+    &lt;tr&gt;
+      &lt;td&gt;
+        Supported installation methods
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        Docker, Podman, Linux package
+      &lt;/td&gt;
+
+      &lt;td&gt;
+        Docker
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+**What stays the same:** your devices keep their entities and history, and metric names don't change. Your license key, account ID, region, and `docker run` flags carry over as they are, and so do environment variables such as `KENTIK_MERAKI_API_KEY`. Only queries that filter on `collector.name` or on agent log text need updates. For details, see [Update queries, alerts, and dashboards](#update-queries).
+
+## Before you begin [#before-you-begin]
+
+1. On each Docker host, list your kTranslate containers:
+
+   ```shell
+   docker ps -a --format "{{.ID}}  {{.Names}}  {{.Image}}" | grep ktranslate
+   ```
+
+   Output example:
+
+   ```
+   3297b134a352  ktranslate-snmp   kentik/ktranslate:v2
+   4962a854b386  ktranslate-sflow  kentik/ktranslate:v2
+   ```
+
+2. Note the settings each container was started with. If you no longer have the original `docker run` command, `docker inspect` shows them:
+
+   ```shell
+   # Flags passed after the image name
+   docker inspect --format '{{json .Config.Cmd}}' $CONTAINER_NAME
+   # Environment variables (this includes your license key, so don't share the output)
+   docker inspect --format '{{json .Config.Env}}' $CONTAINER_NAME
+   # Files mounted into the container, such as snmp-base.yaml
+   docker inspect --format '{{json .HostConfig.Binds}}' $CONTAINER_NAME
+   # Published ports, network mode, and restart policy
+   docker inspect --format '{{json .HostConfig.PortBindings}} {{.HostConfig.NetworkMode}} {{.HostConfig.RestartPolicy.Name}}' $CONTAINER_NAME
+   ```
+
+3. Back up each `snmp-base.yaml` file before you edit it.
+
+4. If your hosts pull images through an internal registry, copy the new image into it, then use your registry's image name in the commands on this page:
+
+   ```shell
+   docker pull newrelic/network-agent:latest
+   docker tag newrelic/network-agent:latest $YOUR_REGISTRY/newrelic/network-agent:latest
+   docker push $YOUR_REGISTRY/newrelic/network-agent:latest
+   ```
+
+&lt;Callout variant="tip"&gt;
+  Migrate one container first and check that it reports all its devices before you migrate the rest. Each container stops sending data for a minute or two while you switch it over.
+&lt;/Callout&gt;
+
+## Migrate a Docker deployment [#migrate-docker]
+
+Repeat these steps for each container:
+
+1. In the container's `snmp-base.yaml` file, update the two paths under `global`:
+
+   ```yaml
+   global:
+     mib_profile_dir: /etc/network-agent/profiles
+     mibs_db: /etc/network-agent/mibs.db
+   ```
+
+   If your file doesn't have a `mibs_db` line, update `mib_profile_dir` only.
+
+   &lt;Callout variant="important"&gt;
+     Don't skip this step, even for flow and syslog containers. With the old `/etc/ktranslate` paths, the New Relic Network Agent can't load its SNMP profiles, so the container stops right after it starts and keeps restarting.
+   &lt;/Callout&gt;
+
+2. Pull the new image:
+
+   ```shell
+   docker pull newrelic/network-agent:latest
+   ```
+
+3. Stop the old container:
+
+   ```shell
+   docker stop ktranslate-$CONTAINER_SERVICE
+   ```
+
+   If the old container's restart policy is `always`, also turn it off so the container doesn't start again when Docker or the host restarts:
+
+   ```shell
+   docker update --restart=no ktranslate-$CONTAINER_SERVICE
+   ```
+
+4. Start the new container with your original `docker run` command, changing only the container name and the image. Keep the same `-service_name` value: it sets the `tags.container_service` attribute on your data, so anything filtered on it keeps working. For example, for SNMP polling:
+
+   ```shell
+   docker run -d --name network-agent-$CONTAINER_SERVICE \
+     --restart unless-stopped --pull=always -p 162:1620/udp \
+     -v `pwd`/snmp-base.yaml:/snmp-base.yaml \
+     -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+     newrelic/network-agent:latest \
+     -snmp /snmp-base.yaml \
+     -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+     -metrics=jchf \
+     -tee_logs=true \
+     -service_name=$CONTAINER_SERVICE \
+     -snmp_discovery_on_start=true \
+     -snmp_discovery_min=180 \
+     nr1.snmp
+   ```
+
+   For commands for each type of container, see [Example commands](#example-commands).
+
+5. Check that the new container started:
+
+   ```shell
+   docker logs network-agent-$CONTAINER_SERVICE 2&gt;&amp;1 | grep "Running --"
+   ```
+
+   You should see a line like `NetworkAgent Running -- version X.Y.Z`. Within a few minutes, the container also appears as `network-agent` in the [migration tracking query](#track-migration).
+
+6. Check that the new container reports every device the old one did. Wait at least two polling intervals after it starts (`global.poll_time_sec` in `snmp-base.yaml`), then run this query in New Relic. Replace `YOUR_CONTAINER_SERVICE` with the container's `-service_name` value, and make sure the time window starts before you stopped the old container:
+
+   ```sql
+   FROM Metric
+   SELECT filter(count(*), WHERE collector.name = 'ktranslate') AS 'kTranslate',
+     filter(count(*), WHERE collector.name = 'network-agent') AS 'New Relic Network Agent'
+   WHERE instrumentation.provider = 'kentik'
+   AND tags.container_service = 'YOUR_CONTAINER_SERVICE'
+   FACET device_name
+   SINCE 3 hours ago
+   LIMIT MAX
+   ```
+
+   Each row is one device, with the number of data points each agent sent for it. Every device that has data under **kTranslate** should also have data under **New Relic Network Agent**. A `0` under **New Relic Network Agent** means the new container isn't reporting that device yet. If your container doesn't use `-service_name`, leave out the `tags.container_service` line; the query then covers all your containers.
+
+   For other types of containers, change the query:
+
+   * **Network flow:** use `FROM KFlow` instead of `FROM Metric`.
+   * **Syslog:** use `FROM Log`, and replace the `tags.container_service` line with `AND plugin.type = 'ktranslate-syslog'`. This version covers all your syslog containers together.
+
+   If a device is missing, look for errors that mention it in the container logs. For SNMP, also check that the device is still listed under `devices` in `snmp-base.yaml`.
+
+   ```shell
+   docker logs network-agent-$CONTAINER_SERVICE 2&gt;&amp;1 | grep "$DEVICE_NAME"
+   ```
+
+7. When the new container reports all its devices, remove the old one:
+
+   ```shell
+   docker rm ktranslate-$CONTAINER_SERVICE
+   ```
+
+&lt;Callout variant="tip"&gt;
+  Until you remove the old container, you can roll back: stop the new container, restore your backed-up `snmp-base.yaml`, and run `docker start ktranslate-$CONTAINER_SERVICE`. If you turned off the old container's restart policy, turn it back on with `docker update --restart=unless-stopped ktranslate-$CONTAINER_SERVICE`.
+&lt;/Callout&gt;
+
+### Example commands [#example-commands]
+
+These are the default commands from the setup guides, updated for the New Relic Network Agent. If you customized your original command, keep your own flags and change only the container name and the image. Keep any `-nr_region` flag you set, such as `-nr_region=GOV` for FedRAMP.
+
+&lt;CollapserGroup&gt;
+  &lt;Collapser
+    id="snmp-polling-command"
+    title="SNMP polling"
+  &gt;
+    ```shell
+    docker run -d --name network-agent-$CONTAINER_SERVICE \
+      --restart unless-stopped --pull=always -p 162:1620/udp \
+      -v `pwd`/snmp-base.yaml:/snmp-base.yaml \
+      -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+      newrelic/network-agent:latest \
+      -snmp /snmp-base.yaml \
+      -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+      -metrics=jchf \
+      -tee_logs=true \
+      -service_name=$CONTAINER_SERVICE \
+      -snmp_discovery_on_start=true \
+      -snmp_discovery_min=180 \
+      nr1.snmp
+    ```
+  &lt;/Collapser&gt;
+
+  &lt;Collapser
+    id="snmp-traps-command"
+    title="SNMP traps (dedicated container)"
+  &gt;
+    ```shell
+    docker run -d --name network-agent-$CONTAINER_SERVICE \
+      --restart unless-stopped --pull=always -p 162:1620/udp \
+      -v `pwd`/traps-base.yaml:/snmp-base.yaml \
+      -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+      newrelic/network-agent:latest \
+      -snmp /snmp-base.yaml \
+      -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+      -metrics=jchf \
+      -tee_logs=true \
+      -service_name=$CONTAINER_SERVICE \
+      nr1.snmp
+    ```
+  &lt;/Collapser&gt;
+
+  &lt;Collapser
+    id="network-flow-command"
+    title="Network flow"
+  &gt;
+    ```shell
+    docker run -d --name network-agent-$CONTAINER_SERVICE \
+      --restart unless-stopped --pull=always --net=host \
+      -v `pwd`/snmp-base.yaml:/snmp-base.yaml \
+      -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+      newrelic/network-agent:latest \
+      -snmp /snmp-base.yaml \
+      -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+      -metrics=jchf \
+      -tee_logs=true \
+      -service_name=$CONTAINER_SERVICE \
+      -flow_only=true \
+      nr1.flow
+    ```
+  &lt;/Collapser&gt;
+
+  &lt;Collapser
+    id="syslog-command"
+    title="Syslog"
+  &gt;
+    ```shell
+    docker run -d --name network-agent-$CONTAINER_SERVICE \
+      --restart unless-stopped --pull=always -p 514:5143/udp \
+      -v `pwd`/snmp-base.yaml:/snmp-base.yaml \
+      -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+      newrelic/network-agent:latest \
+      -snmp /snmp-base.yaml \
+      -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+      -metrics=jchf \
+      -tee_logs=true \
+      -dns=local \
+      -service_name=$CONTAINER_SERVICE \
+      nr1.syslog
+    ```
+  &lt;/Collapser&gt;
+
+  &lt;Collapser
+    id="meraki-command"
+    title="Meraki Dashboard API"
+  &gt;
+    ```shell
+    docker run -d --name network-agent-$CONTAINER_SERVICE \
+      --restart unless-stopped --pull=always --net=host \
+      -v `pwd`/meraki-base.yaml:/snmp-base.yaml \
+      -e NEW_RELIC_API_KEY=$YOUR_NR_LICENSE_KEY \
+      newrelic/network-agent:latest \
+      -snmp /snmp-base.yaml \
+      -nr_account_id=$YOUR_NR_ACCOUNT_ID \
+      -metrics=jchf \
+      -tee_logs=true \
+      -service_name=$CONTAINER_SERVICE \
+      nr1.snmp
+    ```
+  &lt;/Collapser&gt;
+&lt;/CollapserGroup&gt;
+
+### If you mount custom SNMP profiles [#custom-profiles]
+
+If you mount your own SNMP profiles into the container, change the mount target to the new profile folder. It must match the `mib_profile_dir` value you set in step 1:
+
+```shell
+-v `pwd`/snmp-profiles/profiles:/etc/network-agent/profiles
+```
+
+### If you deploy with Docker Compose, Kubernetes, or scripts [#deployment-pipelines]
+
+Make the same changes in your deployment files, then redeploy so that each container is re-created:
+
+* Change the image from `kentik/ktranslate:v2`, or any version tag you pinned, to `newrelic/network-agent:latest`.
+* Update the two paths in the `snmp-base.yaml` file you deploy, as described in step 1.
+* Change any mount target under `/etc/ktranslate`, such as custom profiles, to the same path under `/etc/network-agent`.
+* Keep your flags and environment variables as they are.
+
+For example, in a Docker Compose file:
+
+```yaml
+services:
+  network-agent-snmp:
+    image: newrelic/network-agent:latest  # was kentik/ktranslate:v2
+    volumes:
+      - ./snmp-base.yaml:/snmp-base.yaml
+    # Keep your existing command, ports, and environment settings.
+```
+
+### Get newer versions [#newer-versions]
+
+The New Relic Network Agent doesn't update itself. With the `latest` tag, a container picks up a newer version when you re-create it, because `--pull=always` pulls the newest image when the container is created. Restarting an existing container keeps the version it already has.
+
+To move a container to the newest version, remove it and run your `docker run` command again:
+
+```shell
+docker rm -f network-agent-$CONTAINER_SERVICE
+```
+
+To run a specific version instead, replace `latest` with a version tag from [Docker Hub](https://hub.docker.com/r/newrelic/network-agent/tags), for example `newrelic/network-agent:$VERSION`. The kTranslate version tags, such as `kt-2023-02-28-4294815650`, don't apply to the new image.
+
+## Move from Podman or a Linux package to Docker [#move-to-docker]
+
+&lt;Callout variant="caution"&gt;
+  Podman and Linux package installations aren't supported with the New Relic Network Agent. Move these deployments to Docker.
+&lt;/Callout&gt;
+
+You can keep your existing `snmp-base.yaml` files and settings. [Install Docker](https://docs.docker.com/engine/install/) on the host, then follow the steps for your current setup:
+
+&lt;CollapserGroup&gt;
+  &lt;Collapser
+    id="from-podman"
+    title="From Podman"
+  &gt;
+    1. List your kTranslate containers:
+
+       ```shell
+       podman ps -a --format "{{.ID}}  {{.Names}}  {{.Image}}" | grep ktranslate
+       ```
+
+    2. Note each container's flags, environment variables, mounted files, and ports. `podman inspect` accepts the same `--format` options shown in [Before you begin](#before-you-begin).
+
+    3. In each `snmp-base.yaml` file, update the two paths under `global`, as described in [step 1 of the Docker migration](#migrate-docker).
+
+    4. Stop the Podman container. If a systemd unit starts it automatically, disable that unit too.
+
+       ```shell
+       podman stop $CONTAINER_NAME
+       ```
+
+    5. Start the container with Docker, using the matching command from [Example commands](#example-commands) and the same flags and files you noted in step 2.
+
+    6. When the new container reports all its devices (see [step 6 of the Docker migration](#migrate-docker)), remove the Podman container:
+
+       ```shell
+       podman rm $CONTAINER_NAME
+       ```
+  &lt;/Collapser&gt;
+
+  &lt;Collapser
+    id="from-linux-package"
+    title="From a Linux package"
+  &gt;
+    Your current settings are in two files:
+
+    * `/etc/ktranslate/snmp-base.yaml`: your devices and discovery settings
+    * `/etc/default/ktranslate.env`: your account ID, license key, and the agent flags in `KT_FLAGS`
+
+    1. Copy your configuration file to a working folder and give ownership to user ID 1000, which the container runs as:
+
+       ```shell
+       mkdir -p ~/network-agent &amp;&amp; cd ~/network-agent
+       sudo cp /etc/ktranslate/snmp-base.yaml .
+       sudo chown 1000:1000 snmp-base.yaml
+       ```
+
+       If you customized profiles in `/etc/ktranslate/profiles`, copy that folder too and mount it as described in [If you mount custom SNMP profiles](#custom-profiles).
+
+    2. Edit the copy:
+
+       * Update the two paths under `global`, as described in [step 1 of the Docker migration](#migrate-docker).
+       * If the agent receives SNMP traps, change `trap.listen` from `0.0.0.0:162` to `0.0.0.0:1620`. Docker publishes host port 162 to this port.
+
+    3. Build your `docker run` command from the matching command in [Example commands](#example-commands):
+
+       * Use the `NR_ACCOUNT_ID` and `NEW_RELIC_API_KEY` values from `/etc/default/ktranslate.env`.
+       * Add any other flags from `KT_FLAGS` that the command doesn't already include.
+       * For syslog, leave out `-syslog.source=0.0.0.0:514`. The container listens on port 5143, and `-p 514:5143/udp` publishes it on host port 514.
+
+    4. Stop and disable the kTranslate service so that it releases its ports:
+
+       ```shell
+       sudo systemctl disable --now ktranslate
+       ```
+
+    5. From the folder that holds your `snmp-base.yaml`, run your `docker run` command.
+
+    6. When the new container reports all its devices (see [step 6 of the Docker migration](#migrate-docker)), uninstall the package:
+
+       ```shell
+       # Yum
+       sudo yum remove ktranslate
+       # Apt
+       sudo apt-get remove ktranslate
+       ```
+
+    Until you uninstall the package, you can roll back: stop the container and run `sudo systemctl enable --now ktranslate`.
+  &lt;/Collapser&gt;
+&lt;/CollapserGroup&gt;
+
+## Update queries, alerts, and dashboards [#update-queries]
+
+Device metrics and entities don't change, so dashboards and alerts built on them keep working. Update anything that identifies the agent itself, such as the queries in [Docker container health monitoring](/docs/network-performance-monitoring/advanced/network-agent-container-health):
+
+* **`collector.name`:** change `'ktranslate'` to `'network-agent'`. In the logs search bar, use `collector.name:"network-agent"`.
+* **Agent log text:** the prefix changes from `KTranslate` to `NetworkAgent`. For example, the startup line `KTranslate Running -- Version kt-…` becomes `NetworkAgent Running -- version X.Y.Z`.
+
+While you migrate, some of your containers still run kTranslate. To cover both agents, match either value:
+
+```sql
+FROM Log SELECT *
+WHERE collector.name IN ('ktranslate', 'network-agent')
+AND message LIKE '%Running -- version%'
+```
+
+This query finds the startup line from both agents, because `LIKE` isn't case-sensitive. Check your NRQL alert conditions and dashboard widgets for the same values.
+
+## Track your migration [#track-migration]
+
+To see which of your containers already run the New Relic Network Agent, run this query. Rows that show `ktranslate` in the **Agent** column still need to be migrated.
+
+```sql
+FROM Metric
+SELECT latest(ver) AS 'Version'
+FACET collector.name AS 'Agent', host AS 'Host', svc AS 'Container service'
+WHERE provider = 'kentik-agent'
+AND instrumentation.name = 'heartbeat'
+SINCE 1 hour ago
+```
+
+A container you've migrated shows up with `network-agent` a few minutes after it starts. Its old `ktranslate` row drops off when the query's time window no longer includes data from the old container.
+
+## Troubleshooting [#troubleshooting]
+
+&lt;CollapserGroup&gt;
+  &lt;Collapser
+    id="container-keeps-restarting"
+    title="The new container keeps restarting"
+  &gt;
+    The container logs show an error like `There was an error when setting up the /etc/ktranslate/mibs.db mibDB database and the /etc/ktranslate/profiles profiles`. Your `snmp-base.yaml` still has the old paths.
+
+    Update the paths as described in [step 1 of the Docker migration](#migrate-docker), then re-create the container: run `docker rm -f network-agent-$CONTAINER_SERVICE`, then your `docker run` command.
+  &lt;/Collapser&gt;
+
+  &lt;Collapser
+    id="container-name-in-use"
+    title="docker run fails because the container name is already in use"
+  &gt;
+    Another container already has that name, for example from an earlier attempt. Remove it with `docker rm -f $CONTAINER_NAME`, or choose a different name.
+  &lt;/Collapser&gt;
+
+  &lt;Collapser
+    id="port-in-use"
+    title="docker run fails because a port is already allocated or in use"
+  &gt;
+    Something still holds port 162 (traps) or 514 (syslog), usually the old kTranslate container or service. Stop it first:
+
+    * Docker: `docker stop ktranslate-$CONTAINER_SERVICE`
+    * Podman: `podman stop $CONTAINER_NAME`
+    * Linux package: `sudo systemctl disable --now ktranslate`
+  &lt;/Collapser&gt;
+
+  &lt;Collapser
+    id="traps-missing-after-linux"
+    title="SNMP traps stop arriving after moving from a Linux package"
+  &gt;
+    Inside the container, the agent listens for traps on port 1620. In your `snmp-base.yaml`, set `trap.listen` to `0.0.0.0:1620`, and publish the port with `-p 162:1620/udp`.
+  &lt;/Collapser&gt;
+
+  &lt;Collapser
+    id="discovery-permission-error"
+    title="Discovery fails with a permissions error"
+  &gt;
+    The container runs as user ID 1000 and needs to write to `snmp-base.yaml`. Run `sudo chown 1000:1000 snmp-base.yaml`. For more details, see [The container is running but discovery job doesn't begin](/docs/network-performance-monitoring/troubleshooting/chtimes-error).
+  &lt;/Collapser&gt;
+
+  &lt;Collapser
+    id="health-queries-empty"
+    title="Health queries or alerts show no data after migrating"
+  &gt;
+    They still filter on `collector.name = 'ktranslate'` or on `KTranslate` log text. Update them as described in [Update queries, alerts, and dashboards](#update-queries).
+  &lt;/Collapser&gt;
+
+  &lt;Collapser
+    id="old-version-after-update"
+    title="A container still runs an older version"
+  &gt;
+    Restarting a container doesn't pull a newer image. Re-create the container as described in [Get newer versions](#newer-versions).
+  &lt;/Collapser&gt;
+&lt;/CollapserGroup&gt;
+
+## Timeline [#timeline]
+
+* **[ANNOUNCEMENT DATE]:** The New Relic Network Agent is available on Docker Hub.
+* **[DEADLINE DATE]:** Migration deadline. After this date, New Relic supports only deployments that use the `newrelic/network-agent` image.
+
+## Related docs [#related-docs]
+
+* [Set up SNMP data monitoring](/docs/network-performance-monitoring/setup-performance-monitoring/snmp-performance-monitoring)
+* [Set up network flow data monitoring](/docs/network-performance-monitoring/setup-performance-monitoring/network-flow-monitoring)
+* [Set up network syslog monitoring](/docs/network-performance-monitoring/setup-performance-monitoring/network-syslog-monitoring)
+* [Set up Meraki Dashboard API monitoring](/docs/network-performance-monitoring/setup-performance-monitoring/meraki-api-polling)
+* [Advanced configuration for network monitoring](/docs/network-performance-monitoring/advanced/advanced-config)
+* [Manage the agent's Docker container](/docs/network-performance-monitoring/advanced/network-agent-container-management)
+* [Monitor the agent container's health](/docs/network-performance-monitoring/advanced/network-agent-container-health)
+</code></pre>
+</details>
+</div>
+</body>
+</html>
