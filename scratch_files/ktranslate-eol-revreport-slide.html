@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rev Report slide: kTranslate Agent EOL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@500&family=Inter:wght@400;700&family=Roboto:wght@400&family=Special+Gothic+Condensed+One&display=swap">
+<style>
+  /* Same page size and template as the Rev Report Google Slides deck: 720 x 405 pt. */
+  @page { size: 720pt 405pt; margin: 0; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { margin: 0; }
+  body { min-height: 100vh; display: grid; place-items: center; background: #d9d9d9; }
+  @media print { body { display: block; min-height: 0; background: none; } }
+
+  .slide { position: relative; width: 720pt; height: 405pt; overflow: hidden; background: #fdfcf0; }
+
+  /* Template chrome */
+  .kicker { position: absolute; left: 29.3pt; top: 12pt; margin: 0; font: 500 7pt/9pt 'Geist Mono', monospace; color: #080f11; }
+  .title-block { position: absolute; left: 0; top: 29.5pt; width: 216.5pt; height: 77.5pt; background: linear-gradient(90deg, #1ce783, #92dd6a); }
+  .title { position: absolute; left: 13.7pt; top: 37.45pt; margin: 0; font: 400 33.5pt/29pt 'Special Gothic Condensed One', 'Arial Narrow', sans-serif; letter-spacing: -0.35pt; color: #080f11; white-space: nowrap; }
+  .title-bar { position: absolute; left: 0; top: 107pt; width: 216.5pt; height: 6pt;
+    background: linear-gradient(90deg, #aaf2ce 0 54pt, #1ce783 54pt 108pt, #09412c 108pt, #0d7145 162.5pt, #080f11 162.5pt); }
+  .footer-strip { position: absolute; left: 0; top: 373.5pt; width: 720pt; height: 6pt;
+    background: linear-gradient(90deg, #aaf2ce 0 198.5pt, #1ce783 578pt, #aaf2ce 578pt, #1ce783 720pt); }
+  .footer { position: absolute; left: 0; top: 379.5pt; width: 720pt; height: 25.5pt; background: #000; }
+  .logo { position: absolute; left: 29pt; top: 384.5pt; width: 73pt; height: 15pt; }
+  .legal { position: absolute; right: 28.6pt; top: 389.3pt; margin: 0; font: 500 4.5pt/6pt 'Geist Mono', monospace; color: #7b7e78; white-space: nowrap; }
+
+  /* Slide content */
+  .copy { position: absolute; left: 242.5pt; top: 31.1pt; width: 419.5pt; font: 400 11pt/15.2pt Inter, Arial, sans-serif; color: #222; }
+  .copy p { margin: 0; }
+  .copy p + p { margin-top: 6.6pt; }
+  .copy .after-table { margin-top: 16pt; }
+  .copy b { font-weight: 700; }
+  .eol { color: #f00; font-weight: 700; white-space: nowrap; }
+  .copy a { color: #1c25bc; }
+  .copy a.product { color: #1155cc; font-weight: 700; white-space: nowrap; }
+
+  .facts { width: 450pt; margin: 13pt 0 0 1.5pt; border-collapse: collapse; table-layout: fixed; background: #fff; color: #080f11; font: 400 10pt/13.8pt Roboto, Arial, sans-serif; }
+  .facts th, .facts td { border: 1pt solid #9e9e9e; }
+  .facts th { height: 20.5pt; padding: 0 3pt; background: #080f11; color: #fff; font: 400 12pt/14pt Arial, sans-serif; }
+  .facts td { padding: 3pt 3pt 4pt 2pt; vertical-align: top; }
+  .facts ul { margin: 0; padding: 0 0 0 14.7pt; list-style: none; }
+  .facts li { position: relative; }
+  .facts li::before { content: '\25CF'; position: absolute; left: -14.7pt; font-family: Arial, sans-serif; }
+  .facts code { font: 10pt/13.8pt 'Courier New', monospace; }
+</style>
+</head>
+<body>
+<main class="slide">
+  <p class="kicker">GTM REV REPORT</p>
+  <div class="title-block"></div>
+  <h1 class="title">kTranslate Agent<br>EOL</h1>
+  <div class="title-bar"></div>
+
+  <div class="copy">
+    <p><b>kTranslate</b>, the NPM data collection agent, will <span class="eol">EOL on [DEADLINE DATE]</span>. Customers move to the <a class="product" href="https://hub.docker.com/r/newrelic/network-agent">New Relic Network Agent</a>, available on Docker Hub from [ANNOUNCEMENT DATE].</p>
+
+    <table class="facts">
+      <thead>
+        <tr><th>What changes</th><th>What stays the same</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <ul>
+              <li><code>newrelic/network-agent:latest</code> replaces <code>kentik/ktranslate:v2</code></li>
+              <li>Docker only: Podman and Linux package installs move to Docker</li>
+              <li>Two config paths: <code>/etc/ktranslate</code> becomes <code>/etc/network-agent</code></li>
+              <li>Agent health data: <code>collector.name</code> is now <code>network-agent</code></li>
+            </ul>
+          </td>
+          <td>
+            <ul>
+              <li>Device entities, their history, and <code>kentik.*</code> metrics, so device dashboards and alerts keep working</li>
+              <li>License key, account, region, and the rest of the <code>docker run</code> command</li>
+              <li>Cloud flow logs (AWS, Azure, GCP) aren't affected</li>
+            </ul>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="after-table"><span class="eol">Customer Action is Required.</span><br>
+    Customers update two config paths and re-create each container on the new image, with a minute or two of data gap per container.</p>
+    <p><b>Account Teams</b>: Help NPM customers plan the switch early. Fixes, security updates, and upcoming agent-management tools ship only in the new agent.</p>
+    <p>External Docs: <a href="https://docs.newrelic.com/docs/network-performance-monitoring/get-started/migrate-to-network-agent/">Migrate from kTranslate to the New Relic Network Agent</a></p>
+  </div>
+
+  <div class="footer-strip"></div>
+  <div class="footer"></div>
+  <svg class="logo" viewBox="0 0 73 15" role="img" aria-label="New Relic">
+    <g fill="#1ce783" fill-rule="evenodd">
+    <path d="M 6.33 0.55 L 0.97 3.64 L 3.3 4.98 L 6.33 3.24 L 10.06 5.39 L 10.06 9.7 L 7.04 11.44 L 7.04 14.13 L 12.4 11.04 L 12.4 4.05Z M 6.33 0.55"/>
+    <path d="M 3.99 8.89 L 3.99 13.2 L 6.33 14.54 L 6.33 7.54 L 0.26 4.05 L 0.26 6.74Z M 3.99 8.89"/>
+    </g>
+    <g fill="#fdfcf0" fill-rule="evenodd">
+    <path d="M 20.73 4.04 C 19.42 4.04 18.8 4.86 18.8 4.86 L 18.73 4.86 L 18.6 4.17 L 17.02 4.17 L 17.02 11.18 L 18.73 11.18 L 18.73 7.12 C 18.73 6.23 19.35 5.62 20.25 5.62 C 21.14 5.62 21.76 6.23 21.76 7.12 L 21.76 11.18 L 23.48 11.18 L 23.48 6.99 C 23.48 5.2 22.31 4.04 20.73 4.04Z M 20.73 4.04"/>
+    <path d="M 39.27 8.77 L 39.18 8.77 L 38 4.17 L 36.26 4.17 L 35.09 8.77 L 34.99 8.77 L 33.82 4.17 L 32.03 4.17 L 33.82 11.18 L 35.91 11.18 L 37.08 6.64 L 37.18 6.64 L 38.35 11.18 L 40.44 11.18 L 42.23 4.17 L 40.44 4.17Z M 39.27 8.77"/>
+    <path d="M 47.5 4.79 L 47.43 4.79 L 47.29 4.18 L 45.84 4.18 L 45.84 11.18 L 47.57 11.18 L 47.57 7.13 C 47.57 6.23 47.98 5.82 48.87 5.82 L 49.75 5.82 L 49.75 4.17 L 48.73 4.17 C 48.25 4.18 47.79 4.4 47.5 4.79Z M 47.5 4.79"/>
+    <path d="M 53.56 4.04 C 51.5 4.04 49.98 5.55 49.98 7.68 C 49.98 9.8 51.41 11.31 53.56 11.31 C 55.3 11.31 56.34 10.29 56.78 9.54 L 55.2 8.98 C 55.05 9.26 54.42 9.81 53.56 9.81 C 52.55 9.81 51.84 9.18 51.7 8.23 L 56.93 8.23 C 56.98 8 57 7.77 57 7.54 C 57 5.55 55.48 4.04 53.56 4.04Z M 51.7 7.05 C 51.91 6.16 52.53 5.48 53.56 5.48 C 54.52 5.48 55.14 6.16 55.28 7.05Z M 51.7 7.05"/>
+    <path d="M 28.16 4.04 C 26.09 4.04 24.58 5.55 24.58 7.68 C 24.58 9.8 26 11.31 28.16 11.31 C 29.9 11.31 30.95 10.29 31.38 9.54 L 29.8 8.98 C 29.64 9.26 29.02 9.81 28.16 9.81 C 27.16 9.81 26.44 9.18 26.3 8.23 L 31.53 8.23 C 31.57 8 31.6 7.77 31.6 7.54 C 31.6 5.55 30.08 4.04 28.16 4.04Z M 26.3 7.05 C 26.51 6.16 27.12 5.48 28.16 5.48 C 29.12 5.48 29.74 6.16 29.88 7.05Z M 26.3 7.05"/>
+    <path d="M 61.29 1.41 L 63.01 1.41 L 63.01 3.12 L 61.29 3.12Z M 61.29 1.41"/>
+    <path d="M 67.75 9.73 C 66.72 9.73 65.89 8.91 65.89 7.68 C 65.89 6.44 66.72 5.61 67.75 5.61 C 68.79 5.61 69.2 6.3 69.34 6.71 L 70.89 6.16 C 70.52 5.18 69.59 4.04 67.75 4.04 C 65.69 4.04 64.18 5.55 64.18 7.68 C 64.18 9.8 65.69 11.31 67.75 11.31 C 69.61 11.31 70.53 10.15 70.9 9.12 L 69.34 8.57 C 69.2 9.05 68.79 9.73 67.75 9.73Z M 67.75 9.73"/>
+    <path d="M 57.19 2.93 L 58.16 2.93 L 58.16 11.18 L 59.88 11.18 L 59.88 1.41 L 57.19 1.41Z M 57.19 2.93"/>
+    <path d="M 61.29 4.17 L 63.01 4.17 L 63.01 11.18 L 61.29 11.18Z M 61.29 4.17"/>
+    <path d="M 71.82 9.83 C 71.45 9.83 71.15 10.12 71.15 10.48 C 71.14 10.85 71.43 11.15 71.8 11.16 C 72.17 11.16 72.47 10.87 72.47 10.5 C 72.47 10.5 72.47 10.5 72.47 10.5 C 72.48 10.14 72.21 9.84 71.86 9.83 C 71.84 9.83 71.83 9.83 71.82 9.83Z M 71.82 11.05 C 71.51 11.06 71.25 10.81 71.25 10.5 C 71.25 10.2 71.49 9.94 71.8 9.93 C 72.11 9.93 72.37 10.18 72.37 10.48 C 72.37 10.49 72.38 10.49 72.38 10.5 C 72.38 10.79 72.15 11.04 71.85 11.05 C 71.84 11.05 71.83 11.05 71.82 11.05Z M 71.82 11.05"/>
+    <path d="M 72.11 10.37 C 72.11 10.24 72 10.14 71.87 10.14 C 71.87 10.14 71.86 10.14 71.86 10.14 L 71.56 10.14 L 71.56 10.83 L 71.66 10.83 L 71.66 10.59 L 71.76 10.59 L 72 10.83 L 72.12 10.83 L 71.88 10.59 C 72 10.59 72.11 10.5 72.11 10.37Z M 71.66 10.49 L 71.66 10.24 L 71.86 10.24 C 71.93 10.23 72 10.29 72 10.36 C 72 10.36 72 10.37 72 10.37 C 72 10.45 71.96 10.49 71.86 10.49Z M 71.66 10.49"/>
+    </g>
+  </svg>
+  <p class="legal">© 2026 NEW RELIC, INC. ALL RIGHTS RESERVED. CONFIDENTIAL AND PROPRIETARY. FOR INTERNAL USE ONLY, NOT FOR EXTERNAL DISTRIBUTION.</p>
+</main>
+</body>
+</html>
